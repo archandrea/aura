@@ -1,14 +1,21 @@
 import express from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
+import { cacheSet, cacheGet } from '../utils/redis.js'
 import { CronJob } from 'cron'
 
-let data = null
-let providerList = []
+const MODELS_KEY = 'models:all'
 
 const fetchData = async () => {
   const res = await fetch('https://models.dev/api.json')
-  data = await res.json()
-  providerList = Object.keys(data || {})
+  const data = await res.json()
+  await cacheSet(MODELS_KEY, data, 7 * 24 * 3600)
+  return data
+}
+
+const getModelsData = async () => {
+  const cached = await cacheGet(MODELS_KEY)
+  if (cached) return cached
+  return await fetchData()
 }
 
 const job = new CronJob(
@@ -26,17 +33,9 @@ function modelsEndpoints(apiRouter) {
   apiRouter.use('/models', router)
 
   router.get('/provider-list', asyncHandler(async (req, res) => {
-    if (providerList.length) {
-      res.status(200).json({
-        data: providerList,
-        code: 200,
-        message: 'success'
-      })
-      return
-    }
-    await fetchData()
+    const data = await getModelsData()
     res.status(200).json({
-      data: providerList,
+      data: Object.keys(data || {}),
       code: 200,
       message: 'success'
     })
@@ -44,6 +43,7 @@ function modelsEndpoints(apiRouter) {
 
   router.get('/:provider/model-list', asyncHandler(async (req, res) => {
     const { provider } = req.params
+    const data = await getModelsData()
     res.status(200).json({
       data: Object.keys(data[provider]?.models || {}),
       code: 200,

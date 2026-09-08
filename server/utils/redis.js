@@ -9,7 +9,8 @@ const redis = enabled
     port: Number(process.env.REDIS_PORT || 6379),
     // lazyConnect: true,
     maxRetriesPerRequest: 1,
-    retryStrategy: (times) => Math.min(times * 200, 2000) // 断线后自动重连，间隔递增，最长 2 秒
+    retryStrategy: (times) => Math.min(times * 200, 2000), // 断线后自动重连，间隔递增，最长 2 秒
+    keyPrefix: 'aura:',
   })
   : null
 
@@ -31,7 +32,7 @@ export async function cacheGet(key) {
 export async function cacheSet(key, value, ttl) {
   if (!redis) return null
   try {
-    await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds)
+    await redis.set(key, JSON.stringify(value), 'EX', ttl)
   } catch (err) {
     logger.warn(`[redis] SET ${key} failed: ${err.message}`)
   }
