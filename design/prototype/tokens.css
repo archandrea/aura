@@ -1,0 +1,84 @@
+/* ============================================================
+ * Aura 工作台改版 · 设计 Token
+ * 来源：design/prototype/*.png（Ardot 原型）
+ * 用法：在 interface/src 全局样式中 @import 本文件，或复制进 Tailwind theme
+ * 所有 Hover/Active 派生值均为按主色推导的建议值，非原型中定义
+ * ============================================================ */
+
+:root {
+  /* ---------- 品牌与语义主色 ---------- */
+  --aura-primary: #2266d1; /* 主色：主按钮、选中态、链接 */
+  --aura-primary-hover: #1b54af; /* 派生 */
+  --aura-primary-active: #17479a; /* 派生 */
+  --aura-primary-bg: #eef6ff; /* 主色浅底：选中导航、信息胶囊 */
+  --aura-primary-border: #cfe2ff; /* 派生 */
+
+  --aura-success: #2f7d5c; /* 进行中 / 成功 */
+  --aura-success-bg: #e8f3ee;
+  --aura-warning: #ad6d18; /* 已暂停 / 警告 */
+  --aura-warning-bg: #fbf1e1;
+  --aura-neutral: #6b7785; /* 已归档 / 次要信息 */
+  --aura-neutral-bg: #f1f3f5;
+  --aura-error: #c0392b; /* 失败 / 错误 / 危险操作 */
+  --aura-error-bg: #fbe9e9;
+
+  /* ---------- 中性色（文字 / 背景 / 描边） ---------- */
+  --aura-ink: #16202a; /* 主文字 */
+  --aura-text-secondary: #6b7785; /* 次要文字、说明 */
+  --aura-text-placeholder: #8a97a3; /* 占位符 */
+  --aura-text-disabled: #a3aeb8; /* 禁用文字 */
+
+  --aura-canvas: #f5f7f9; /* 页面画布底色 */
+  --aura-surface: #ffffff; /* 卡片 / 面板 */
+  --aura-surface-subtle: #f7f9fb; /* 表头、次级区块底 */
+  --aura-surface-disabled: #f1f3f5; /* 禁用输入框底 */
+  --aura-skeleton: #e6ebf0; /* 骨架屏条 */
+
+  --aura-line: #dce3ea; /* 常规描边、分割线 */
+  --aura-line-strong: #c6cfd8; /* 强调分割线 */
+  --aura-rail: #18222d; /* 方案 A 深色模块导航底 */
+
+  /* ---------- 尺寸 ---------- */
+  --aura-radius-sm: 6px; /* 表头、小标签 */
+  --aura-radius-md: 8px; /* 按钮、输入框 */
+  --aura-radius-lg: 10px; /* 小卡片 */
+  --aura-radius-xl: 12px; /* 页面卡片、屏幕容器 */
+
+  --aura-control-h: 34px; /* 筛选控件高度 */
+  --aura-input-h: 38px; /* 输入框高度 */
+  --aura-btn-h-sm: 32px; /* 小按钮 */
+  --aura-btn-h-md: 36px; /* 常规按钮 */
+  --aura-row-h: 44px; /* 表格表头行高 */
+  --aura-row-h-lg: 60px; /* 用户表行高 */
+
+  /* ---------- 布局 ---------- */
+  --aura-rail-w: 72px; /* 方案 A 模块导航宽 */
+  --aura-sidebar-w: 260px; /* 方案 A 项目侧栏宽 */
+  --aura-left-w: 280px; /* 方案 B 左栏宽 */
+  --aura-right-w: 320px; /* 方案 B 右栏（上下文沉淀）宽 */
+  --aura-right-w-sm: 300px; /* 方案 B 右栏（笔记属性）宽 */
+  --aura-page-pad: 28px; /* 主区内边距 */
+
+  /* ---------- 字体 ---------- */
+  --aura-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --aura-fs-title: 22px; /* 页面标题 */
+  --aura-fs-section: 15px; /* 区块标题 / 卡片标题 */
+  --aura-fs-body: 13px; /* 正文、表格 */
+  --aura-fs-sm: 12px; /* 次要说明、表头 */
+  --aura-fs-xs: 11px; /* 胶囊文字 */
+
+  /* ---------- 阴影 ---------- */
+  --aura-shadow-card: 0 1px 2px rgba(22, 32, 42, 0.04);
+  --aura-shadow-modal: 0 18px 40px -6px rgba(13, 20, 28, 0.24);
+}
+
+/* ---------- 暗色导航（方案 A Rail）局部作用域 ---------- */
+.aura-rail {
+  background: var(--aura-rail);
+  color: rgba(255, 255, 255, 0.72);
+}
+.aura-rail .aura-rail__item.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}

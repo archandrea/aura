@@ -4,3 +4,4 @@ logs/
 *.local
 .ace-tool/
 .omc
+.workbuddy

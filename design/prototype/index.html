@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aura 工作台改版 · 原型预览</title>
+<style>
+  :root {
+    --primary: #2266D1;
+    --ink: #16202A;
+    --muted: #6B7785;
+    --line: #DCE3EA;
+    --canvas: #F5F7F9;
+    --surface: #FFFFFF;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 32px 64px;
+    background: var(--canvas);
+    color: var(--ink);
+    font: 14px/1.6 Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  .wrap { max-width: 1440px; margin: 0 auto; }
+  header { margin-bottom: 32px; }
+  h1 { margin: 0 0 8px; font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { margin: 0; color: var(--muted); font-size: 13px; }
+  .meta {
+    margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .chip {
+    display: inline-flex; align-items: center; height: 26px; padding: 0 10px;
+    border-radius: 13px; font-size: 12px; font-weight: 500;
+  }
+  .chip.a { background: #EEF6FF; color: var(--primary); }
+  .chip.b { background: #E8F3EE; color: #2F7D5C; }
+  .chip.g { background: #F1F3F5; color: var(--muted); }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+    gap: 24px;
+  }
+  figure {
+    margin: 0; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px;
+  }
+  figure img {
+    display: block; width: 100%; height: auto; border-radius: 8px;
+    border: 1px solid var(--line); background: #fff;
+  }
+  figcaption {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 4px 2px;
+  }
+  .name { font-size: 14px; font-weight: 600; }
+  .file { margin-left: auto; font-size: 12px; color: var(--muted); font-family: ui-monospace, Menlo, Consolas, monospace; }
+  a { color: var(--primary); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Aura 工作台改版 · 原型预览</h1>
+    <p class="sub">16 屏 + 1 弹窗态 · 1440×900 · 方案 A 用于系统入口，方案 B 用于主体验。详见 <code>README.md</code>。</p>
+    <div class="meta">
+      <span class="chip a">方案 A · 入口（01–05）</span>
+      <span class="chip b">方案 B · 主体验（06–14）</span>
+      <span class="chip g">全局规范（15）</span>
+    </div>
+  </header>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const items = [
+  ['00-cover.png', '封面与索引', ''],
+  ['01-login-A.png', '登录', 'A'],
+  ['02-register-A.png', '注册', 'A'],
+  ['03-workspace-A.png', '项目工作台', 'A'],
+  ['04-workspace-empty-A.png', '工作台空状态', 'A'],
+  ['05-new-project-A.png', '新建/编辑项目（底图）', 'A'],
+  ['05b-new-project-modal-A.png', '新建项目弹窗态', 'A'],
+  ['06-project-advance-B.png', '项目推进页', 'B'],
+  ['07-chat-empty-B.png', '推进页空会话', 'B'],
+  ['08-note-library-B.png', '笔记库', 'B'],
+  ['09-note-editor-B.png', '笔记编辑', 'B'],
+  ['10-settings-B.png', '设置首页', 'B'],
+  ['11-model-config-B.png', '模型配置', 'B'],
+  ['12-admin-users-B.png', '用户管理', 'B'],
+  ['13-admin-roles-B.png', '角色管理（权限矩阵）', 'B'],
+  ['14-admin-menus-B.png', '菜单管理（树形表格）', 'B'],
+  ['15-states-feedback.png', '状态与反馈规范', 'G'],
+];
+
+const cls = { A: 'chip a', B: 'chip b', G: 'chip g' };
+const label = { A: '方案 A', B: '方案 B', G: '全局' };
+
+document.getElementById('grid').innerHTML = items.map(([file, name, plan]) => `
+  <figure>
+    <img src="${file}" alt="${name}" loading="lazy" />
+    <figcaption>
+      <span class="name">${name}</span>
+      ${plan ? `<span class="${cls[plan]}">${label[plan]}</span>` : ''}
+      <span class="file">${file}</span>
+    </figcaption>
+  </figure>
+`).join('');
+</script>
+</body>
+</html>
