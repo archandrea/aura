@@ -1,6 +1,6 @@
 import db from '../sql/index.js'
 import { getOffsetPage } from '../utils/pager.js'
-import { formatResponse } from '../utils/formatter.js'
+import { formatResponse } from '../../shared/utils/formatter.js'
 
 export default class Note {
   static filterFields(note) {

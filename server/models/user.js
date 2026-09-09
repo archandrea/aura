@@ -1,6 +1,7 @@
 import db from '../sql/index.js'
+import Rbac from './rbac.js'
 import { getOffsetPage } from '../utils/pager.js'
-import { formatResponse } from '../utils/formatter.js'
+import { formatResponse } from '../../shared/utils/formatter.js'
 import { hashPassword, comparePassword } from '../utils/bcrypt.js'
 
 export default class User {
@@ -78,13 +79,12 @@ export default class User {
           r.description,
           r.is_system
         FROM user_role ur
-        LEFT JOIN role r ON ur.role_id = r.id 
-        WHERE ur.user_id = ?  
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE ur.user_id = ?
       `, [id])
       user.roles = roles
-      this.filterFields(user)
+      return this.filterFields(user)
     }
-    return user
   }
 
   static async findByEmail(email) {
@@ -96,10 +96,23 @@ export default class User {
     return rows[0]
   }
 
+  static async findByName(name) {
+    if (!name) {
+      throw new Error('name is required')
+    }
+    const baseSql = 'SELECT * FROM user WHERE name = ?'
+    const [rows] = await db.query(baseSql, [name])
+    return rows[0]
+  }
+
   static async create({ name, email, password } = {}) {
     const baseSql = 'INSERT INTO user (name, email, password) VALUES (?, ?, ?)'
     const [result] = await db.query(baseSql, [name, email, await hashPassword(password)])
-    await db.query('INSERT INTO user_role (user_id, role_id) VALUES (?, ?)', [result.insertId, 3])
+    // 新用户默认分配 member 角色（种子数据缺失时跳过，不阻塞注册）
+    const [roles] = await db.query('SELECT id FROM role WHERE code = ?', ['member'])
+    if (roles.length) {
+      await db.query('INSERT INTO user_role (user_id, role_id) VALUES (?, ?)', [result.insertId, roles[0].id])
+    }
     return result.insertId
   }
 
@@ -137,6 +150,8 @@ export default class User {
     if (!id) {
       throw new Error('id is required')
     }
+    // 清理 user_role 关联
+    await Rbac.cleanUserRelations(id)
     const baseSql = 'DELETE FROM user WHERE id = ?'
     const [result] = await db.query(baseSql, [id])
     return result.affectedRows > 0

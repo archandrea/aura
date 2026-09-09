@@ -1,9 +1,9 @@
 /**
  * User API 接口测试
- * 覆盖：注册、登录、列表、分页、更新、删除、认证
+ * 覆盖：注册、登录、Profile、列表、分页、更新（自助/管理）、删除、角色分配、权限拦截
  */
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
-import { getRequest, registerAndLogin, authHeader, cleanTable } from './helpers.js'
+import { getRequest, registerAndLogin, registerAndLoginAdmin, authHeader, cleanTable } from './helpers.js'
 
 let request
 
@@ -27,7 +27,7 @@ describe('POST /api/user/register', () => {
       })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.message).toBe('success')
   })
 
@@ -36,8 +36,7 @@ describe('POST /api/user/register', () => {
       .post('/api/user/register')
       .send({ name: 'test' })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('无效邮箱格式应报错', async () => {
@@ -49,8 +48,7 @@ describe('POST /api/user/register', () => {
         password: 'Test_123456'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('弱密码应报错', async () => {
@@ -62,8 +60,7 @@ describe('POST /api/user/register', () => {
         password: '123'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('重复注册同名用户应报错', async () => {
@@ -83,8 +80,7 @@ describe('POST /api/user/register', () => {
         password: 'Test_123456'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(409)
   })
 
   it('新注册用户默认角色只有member', async () => {
@@ -95,7 +91,7 @@ describe('POST /api/user/register', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data.roles.length).toBe(1)
     expect(res.body.data.roles[0].code).toBe('member')
   })
@@ -122,7 +118,7 @@ describe('POST /api/user/login', () => {
       })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data).toHaveProperty('token')
     expect(res.body.data.name).toBe('login_user')
     expect(res.body.data.email).toBe('login@test.com')
@@ -136,8 +132,7 @@ describe('POST /api/user/login', () => {
         password: 'WrongPassword@123'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(400)
   })
 
   it('不存在的用户应报错', async () => {
@@ -148,8 +143,7 @@ describe('POST /api/user/login', () => {
         password: 'Test_123456'
       })
 
-    expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.status).toBe(404)
   })
 
   it('缺少字段应报错', async () => {
@@ -157,8 +151,33 @@ describe('POST /api/user/login', () => {
       .post('/api/user/login')
       .send({ email: 'login@test.com' })
 
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('GET /api/user/profile', () => {
+  it('未认证请求应返回 401', async () => {
+    const res = await request.get('/api/user/profile')
+    expect(res.status).toBe(401)
+  })
+
+  it('member 的 profile 应包含角色、权限与菜单', async () => {
+    const { token } = await registerAndLogin()
+    const res = await request.get('/api/user/profile').set(authHeader(token))
+
     expect(res.status).toBe(200)
-    expect(res.body.code).not.toBe(1)
+    expect(res.body.code).toBe(200)
+    expect(res.body.data.roles).toContain('member')
+    expect(Array.isArray(res.body.data.permissions)).toBe(true)
+    expect(Array.isArray(res.body.data.menus)).toBe(true)
+    // member 基础菜单（chat/note/setting）无权限码，权限集应为空
+    expect(res.body.data.permissions).toEqual([])
+  })
+
+  it('profile 不应泄露密码', async () => {
+    const { token } = await registerAndLogin()
+    const res = await request.get('/api/user/profile').set(authHeader(token))
+    expect(res.body.data.password).toBeUndefined()
   })
 })
 
@@ -168,23 +187,30 @@ describe('GET /api/user/list', () => {
     expect(res.status).toBe(401)
   })
 
-  it('认证后应返回用户列表', async () => {
+  it('普通用户（无 user:list 权限）应返回 403', async () => {
     const { token } = await registerAndLogin()
+    const res = await request.get('/api/user/list').set(authHeader(token))
+    expect(res.status).toBe(403)
+  })
+
+  it('管理员应返回用户列表', async () => {
+    await registerAndLogin()
+    const { token } = await registerAndLoginAdmin()
 
     const res = await request
       .get('/api/user/list')
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(Array.isArray(res.body.data)).toBe(true)
-    expect(res.body.data.length).toBeGreaterThanOrEqual(1)
+    expect(res.body.data.length).toBeGreaterThanOrEqual(2)
   })
 })
 
 describe('GET /api/user/page', () => {
-  it('应支持分页查询', async () => {
-    const { token } = await registerAndLogin()
+  it('管理员应支持分页查询', async () => {
+    const { token } = await registerAndLoginAdmin()
 
     const res = await request
       .get('/api/user/page')
@@ -192,12 +218,12 @@ describe('GET /api/user/page', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
     expect(res.body.data).toBeDefined()
   })
 
-  it('应支持关键词搜索', async () => {
-    const { token, name } = await registerAndLogin()
+  it('管理员应支持关键词搜索', async () => {
+    const { token, name } = await registerAndLoginAdmin()
 
     const res = await request
       .get('/api/user/page')
@@ -205,23 +231,26 @@ describe('GET /api/user/page', () => {
       .set(authHeader(token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
+  })
+
+  it('普通用户应返回 403', async () => {
+    const { token } = await registerAndLogin()
+
+    const res = await request
+      .get('/api/user/page')
+      .set(authHeader(token))
+
+    expect(res.status).toBe(403)
   })
 })
 
 describe('PUT /api/user/:id', () => {
-  it('应成功更新用户信息', async () => {
-    const { token } = await registerAndLogin()
-
-    // 先获取用户列表拿到 id
-    const listRes = await request
-      .get('/api/user/list')
-      .set(authHeader(token))
-
-    const userId = listRes.body.data[0].id
+  it('用户可以更新自己的资料（自助）', async () => {
+    const { token, id } = await registerAndLogin()
 
     const res = await request
-      .put(`/api/user/${userId}`)
+      .put(`/api/user/${id}`)
       .set(authHeader(token))
       .send({
         name: 'updated_name',
@@ -229,35 +258,132 @@ describe('PUT /api/user/:id', () => {
       })
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
+  })
+
+  it('普通用户更新他人应返回 403', async () => {
+    const alice = await registerAndLogin()
+    const bob = await registerAndLogin({ name: 'bob_target', email: 'bob_target@test.com' })
+
+    const res = await request
+      .put(`/api/user/${bob.id}`)
+      .set(authHeader(alice.token))
+      .send({ name: 'hacked_name' })
+
+    expect(res.status).toBe(403)
+  })
+
+  it('管理员可以更新他人资料', async () => {
+    const admin = await registerAndLoginAdmin()
+    const bob = await registerAndLogin({ name: 'bob_admin_edit', email: 'bob_admin_edit@test.com' })
+
+    const res = await request
+      .put(`/api/user/${bob.id}`)
+      .set(authHeader(admin.token))
+      .send({ name: 'admin_edited' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.code).toBe(200)
   })
 })
 
 describe('DELETE /api/user/:id', () => {
-  it('应成功删除用户', async () => {
-    // 注册一个额外用户用于删除
-    const { token } = await registerAndLogin()
-
-    await request
-      .post('/api/user/register')
-      .send({
-        name: 'to_delete',
-        email: 'delete@test.com',
-        password: 'Test_123456'
-      })
-
-    // 获取列表找到 to_delete 用户
-    const listRes = await request
-      .get('/api/user/list')
-      .set(authHeader(token))
-
-    const targetUser = listRes.body.data.find(u => u.name === 'to_delete')
+  it('管理员应成功删除用户', async () => {
+    const admin = await registerAndLoginAdmin()
+    const target = await registerAndLogin({ name: 'to_delete', email: 'delete@test.com' })
 
     const res = await request
-      .delete(`/api/user/${targetUser.id}`)
-      .set(authHeader(token))
+      .delete(`/api/user/${target.id}`)
+      .set(authHeader(admin.token))
 
     expect(res.status).toBe(200)
-    expect(res.body.code).toBe(1)
+    expect(res.body.code).toBe(200)
+  })
+
+  it('普通用户删除他人应返回 403', async () => {
+    const alice = await registerAndLogin()
+    const bob = await registerAndLogin({ name: 'bob_del', email: 'bob_del@test.com' })
+
+    const res = await request
+      .delete(`/api/user/${bob.id}`)
+      .set(authHeader(alice.token))
+
+    expect(res.status).toBe(403)
+  })
+})
+
+describe('PUT /api/user/:id/roles', () => {
+  let admin, target
+
+  beforeEach(async () => {
+    admin = await registerAndLoginAdmin()
+    target = await registerAndLogin({ name: 'role_target', email: 'role_target@test.com' })
+  })
+
+  it('管理员应成功给用户分配角色（全量替换）', async () => {
+    // target 注册后默认 member，替换为 admin（角色 id=2）
+    const res = await request
+      .put(`/api/user/${target.id}/roles`)
+      .set(authHeader(admin.token))
+      .send({ roleIds: [2] })
+
+    expect(res.status).toBe(200)
+    expect(res.body.code).toBe(200)
+    expect(res.body.data).toBe(true)
+
+    const detailRes = await request
+      .get(`/api/user/${target.id}`)
+      .set(authHeader(admin.token))
+    expect(detailRes.body.data.roles.map(r => r.code)).toEqual(['admin'])
+  })
+
+  it('分配空数组应清空用户所有角色', async () => {
+    const res = await request
+      .put(`/api/user/${target.id}/roles`)
+      .set(authHeader(admin.token))
+      .send({ roleIds: [] })
+
+    expect(res.status).toBe(200)
+
+    const detailRes = await request
+      .get(`/api/user/${target.id}`)
+      .set(authHeader(admin.token))
+    expect(detailRes.body.data.roles).toEqual([])
+  })
+
+  it('roleIds 非数组应报错', async () => {
+    const res = await request
+      .put(`/api/user/${target.id}/roles`)
+      .set(authHeader(admin.token))
+      .send({ roleIds: 'not-array' })
+
+    expect(res.status).toBe(400)
+  })
+
+  it('roleIds 含不存在的角色应报错', async () => {
+    const res = await request
+      .put(`/api/user/${target.id}/roles`)
+      .set(authHeader(admin.token))
+      .send({ roleIds: [9999] })
+
+    expect(res.status).toBe(400)
+  })
+
+  it('不存在的用户应报错', async () => {
+    const res = await request
+      .put('/api/user/999/roles')
+      .set(authHeader(admin.token))
+      .send({ roleIds: [2] })
+
+    expect(res.status).toBe(404)
+  })
+
+  it('普通用户应返回 403', async () => {
+    const res = await request
+      .put(`/api/user/${target.id}/roles`)
+      .set(authHeader(target.token))
+      .send({ roleIds: [1] }) // 尝试给自己提权 super_admin
+
+    expect(res.status).toBe(403)
   })
 })

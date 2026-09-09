@@ -245,7 +245,7 @@ function ChatPanel({ workspace }) {
     setLoading(true)
     const newConversation = [...conversation, { proposer: 'user', content }]
     setConversation(newConversation)
-    const [err, res] = await chatToWorkspace(workspace.id, content, workspace.modelId)
+    const [err, res] = await chatToWorkspace(workspace.id, content)
     console.log('[API]::[chatToWorkspace]::', res, err)
     if (res) {
       setConversation([...newConversation, { proposer: 'assistant', content: res.data.content }])
@@ -278,7 +278,7 @@ function ChatPanel({ workspace }) {
   }
 
   const fetchConversation = async () => {
-    if (!workspace) {
+    if (!workspace?.id) {
       return false
     }
     const [err, res] = await getChatListByWorkspaceId(workspace.id)

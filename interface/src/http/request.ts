@@ -21,15 +21,16 @@ service.interceptors.response.use(response => {
   if (response.config?.data && JSON.parse(response.config.data).stream === true) {
     return response
   }
-  if (response.data?.code !== 1) {
+  if (response.data?.code !== 200) {
     handleErrMsg(response.data?.message)
     return Promise.reject(response.data)
   }
   return response.data
 }, error => {
   // console.log('response-interceptors-error', error)
-  handleNetworkError(error.status)
-  if (error.status === 401) {
+  const errStatus = error.status ?? error.response?.status
+  handleNetworkError(errStatus)
+  if (errStatus === 401) {
     window.location.href = '/login'
   }
   return Promise.reject(error)

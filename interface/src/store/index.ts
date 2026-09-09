@@ -8,6 +8,23 @@ interface User {
   token: string
 }
 
+interface Menu {
+  id: number
+  parentId: number
+  name: string
+  code: string
+  permission: string
+  path: string
+  icon: string
+  type: string
+  visible: number
+  status?: number
+  children?: Array<Menu>
+  sortOrder?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
 interface Workspace {
   id: number
   name: string
@@ -21,7 +38,14 @@ interface WorkspaceState {
 
 interface UserState {
   user: User | null
+  roles: string[] | null
+  menus: Array<Menu> | null
+  permissions: string[] | null
   setUser: (user: User | null) => void
+  setRoles: (roles: string[] | null) => void
+  setMenus: (menus: Array<Menu> | null) => void
+  setPermissions: (permissions: string[] | null) => void
+  clearUser: () => void
 }
 
 // 创建浏览器安全的 storage
@@ -38,24 +62,29 @@ const getStorage = () => {
   return localStorage
 }
 
-export const useWorkspaceStore = create<WorkspaceState>()(
-  persist(
-    (set) => ({
-      workspace: null,
-      setWorkspace: (workspace) => set({ workspace }),
-    }),
-    {
-      name: 'workspace-store',
-      storage: createJSONStorage(getStorage),
-    }
-  )
-)
+// workspace 引用数据库记录，不持久化：每次进入页面由 workspaceList 自动选中
+export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
+  workspace: null,
+  setWorkspace: (workspace) => set({ workspace }),
+}))
 
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
       user: null,
+      roles: [],
+      menus: [],
+      permissions: [],
       setUser: (user) => set({ user }),
+      setRoles: (roles) => set({ roles }),
+      setMenus: (menus) => set({ menus }),
+      setPermissions: (permissions) => set({ permissions }),
+      clearUser: () => set({
+        user: null,
+        roles: [],
+        menus: [],
+        permissions: []
+      })
     }),
     {
       name: 'user-store',

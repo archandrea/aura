@@ -29,7 +29,7 @@ function modelsEndpoints(apiRouter) {
     if (providerList.length) {
       res.status(200).json({
         data: providerList,
-        code: 1,
+        code: 200,
         message: 'success'
       })
       return
@@ -37,7 +37,7 @@ function modelsEndpoints(apiRouter) {
     await fetchData()
     res.status(200).json({
       data: providerList,
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))
@@ -46,7 +46,7 @@ function modelsEndpoints(apiRouter) {
     const { provider } = req.params
     res.status(200).json({
       data: Object.keys(data[provider]?.models || {}),
-      code: 1,
+      code: 200,
       message: 'success'
     })
   }))

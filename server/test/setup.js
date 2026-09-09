@@ -73,9 +73,9 @@ afterAll(async () => {
       'model_config',
       'note',
       'workspace',
+      'role_menu',
       'user_role',
-      'role_permission',
-      'permission',
+      'menu',
       'role',
       'user'
     ]

@@ -2,7 +2,7 @@ import { App, Flex, Card, Space, Button, Checkbox, Form, Input } from 'antd'
 import { LockOutlined, UserOutlined, MailOutlined } from '@ant-design/icons'
 import { useNavigate, useSearchParams, useSubmit } from 'react-router'
 import { useState, useEffect } from 'react'
-import { login, register } from '@/api/user'
+import { login, register, profile } from '@/api/user'
 import { useUserStore } from '@/store'
 
 const submitLogin = async (payload: any) => {
@@ -201,7 +201,21 @@ export default function Page({ actionData }) {
   let [searchParams] = useSearchParams()
   const [type, setType] = useState('login')
   const setUser = useUserStore((state) => state.setUser)
+  const setRoles = useUserStore((state) => state.setRoles)
+  const setMenus = useUserStore((state) => state.setMenus)
+  const setPermissions = useUserStore((state) => state.setPermissions)
   const navigate = useNavigate()
+
+  const setProfile = async () => {
+    const [err, res] = await profile()
+    if (res?.data) {
+      const { roles, permissions, menus } = res.data
+      setRoles(roles)
+      setMenus(menus)
+      setPermissions(permissions)
+    }
+    return null
+  }
 
   useEffect(() => {
     const type = searchParams.get('type')
@@ -213,13 +227,18 @@ export default function Page({ actionData }) {
   useEffect(() => {
     if (!actionData) return
     message.success('提交成功')
-    if (type === 'login') {
-      setUser(actionData)
-      navigate('/chat')
+    const go = async () => {
+      if (type === 'login') {
+        setUser(actionData)
+        // 等角色/菜单写入 store 再进主界面，避免首帧空菜单
+        await setProfile()
+        navigate('/chat')
+      }
+      if (type === 'register') {
+        setType('login')
+      }
     }
-    if (type === 'register') {
-      setType('login')
-    }
+    go()
   }, [actionData])
 
   return (

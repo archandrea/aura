@@ -44,7 +44,7 @@ export async function registerAndLogin(userData = {}) {
     .post('/api/user/register')
     .send(defaultUser)
 
-  if (registerRes.body.code !== 1) {
+  if (!registerRes.ok) {
     throw new Error(`Register failed: ${registerRes.body.message}`)
   }
 
@@ -56,7 +56,7 @@ export async function registerAndLogin(userData = {}) {
       password: defaultUser.password
     })
 
-  if (loginRes.body.code !== 1) {
+  if (!loginRes.ok) {
     throw new Error(`Login failed: ${loginRes.body.message}`)
   }
 
@@ -66,6 +66,27 @@ export async function registerAndLogin(userData = {}) {
     name: loginRes.body.data.name,
     email: loginRes.body.data.email,
   }
+}
+
+/**
+ * 给用户分配角色（直接操作数据库，绕过 API 权限，用于测试准备）
+ */
+export async function assignRole(userId, roleCode) {
+  const { default: pool } = await import('../sql/index.js')
+  const [rows] = await pool.query('SELECT id FROM role WHERE code = ?', [roleCode])
+  if (!rows.length) {
+    throw new Error(`role ${roleCode} not found, run init.sql seeds first`)
+  }
+  await pool.query('INSERT IGNORE INTO user_role (user_id, role_id) VALUES (?, ?)', [userId, rows[0].id])
+}
+
+/**
+ * 注册并登录一个 super_admin 用户
+ */
+export async function registerAndLoginAdmin(userData = {}) {
+  const auth = await registerAndLogin(userData)
+  await assignRole(auth.id, 'super_admin')
+  return auth
 }
 
 /**

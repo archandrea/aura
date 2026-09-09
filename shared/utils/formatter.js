@@ -18,7 +18,7 @@ export const toSnakeCase = (str) => {
   return str.replace(/([A-Z])/g, '_$1').toLowerCase()
 }
 
-// AKA toCamelCase
+// AKA traversal toCamelCase
 export const formatResponse = (data) => {
   if (Array.isArray(data)) {
     return data.map(item => formatResponse(item))
@@ -35,4 +35,38 @@ export const formatResponse = (data) => {
     return formatDate(data)
   }
   return data
+}
+
+export const toTree = (list, options = {}) => {
+  const { idKey = 'id', parentKey = 'parentId', childrenKey = 'children' } = options
+
+  const map = {}
+  const tree = []
+
+  list.forEach(node => {
+    map[node[idKey]] = { ...node, [childrenKey]: [] }
+  })
+
+  list.forEach(node => {
+    const current = map[node[idKey]]
+    const parentId = node[parentKey]
+    if (parentId && map[parentId]) {
+      map[parentId][childrenKey].push(current)
+    } else {
+      tree.push(current) // 无父节点 → 顶级
+    }
+  })
+
+  const prune = (nodes) => {
+    nodes.forEach(n => {
+      if (n[childrenKey].length === 0) {
+        delete n[childrenKey]
+      } else {
+        prune(n[childrenKey])
+      }
+    })
+  }
+  prune(tree)
+
+  return tree
 }

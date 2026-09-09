@@ -1,22 +1,20 @@
+### 用户接口手动调试
+### 权限说明（RBAC）：
+### - register / login：公开
+### - profile / GET :id / PUT :id：任意登录用户，:id 为本人时放行（自助）
+### - list / page / PUT :id/roles / DELETE :id：需要管理权限
+###   （user:list / user:assign_role / user:delete，种子管理员 admin@aura.com 可用）
+
 @proto = http
 @host = localhost
 @port = 3000
 @baseApi = /api/user
 @baseUrl = {{proto}}://{{host}}:{{port}}{{baseApi}}
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imx1Y194eiIsImVtYWlsIjoibHVjX3h6QHFxLmNvbSIsImlhdCI6MTc4MzQxMzU3OSwiZXhwIjoxNzgzNjcyNzc5fQ.Ozzy9cSbkMcHGlfml9bC8eL9vbr6oy5DciomqcZ1LQY
+@token = 登录后把 token 粘贴到这里
 
-GET {{baseUrl}}/list HTTP/1.1
-Authorization: Bearer {{token}}
-###
+### ==================== 公开接口 ====================
 
-GET {{baseUrl}}/page?page=1&pageSize=10&keyword=user1&createdAt=2025-11-24T00:00:00,2025-11-24T23:59:59 HTTP/1.1
-Authorization: Bearer {{token}}
-###
-
-GET {{baseUrl}}/1
-Authorization: Bearer {{token}}
-###
-
+# 注册（新用户自动分配 member 角色）
 POST {{baseUrl}}/register
 content-type: application/json
 
@@ -28,6 +26,18 @@ content-type: application/json
 
 ###
 
+# 登录（种子管理员默认密码 Admin_123456，首次登录后请修改）
+POST {{baseUrl}}/login
+content-type: application/json
+
+{
+    "email": "admin@aura.com",
+    "password": "Admin_123456"
+}
+
+###
+
+# 登录（普通用户）
 POST {{baseUrl}}/login
 content-type: application/json
 
@@ -36,19 +46,50 @@ content-type: application/json
     "password": "9712170320_xz"
 }
 
+### ==================== 自助接口（任意登录用户） ====================
 
+# 当前用户 Profile（角色 + 权限 + 菜单树）
+GET {{baseUrl}}/profile
+Authorization: Bearer {{token}}
 ###
 
-PUT {{baseUrl}}/46
+# 用户详情（查自己放行；查他人需要 user:read 权限）
+GET {{baseUrl}}/1
+Authorization: Bearer {{token}}
+###
+
+# 更新自己的资料（改他人需要 user:update 权限）
+PUT {{baseUrl}}/1
 content-type: application/json
+Authorization: Bearer {{token}}
 
 {
-    "name": "default_user",
-    "email": "default_user@example.com",
-    "password": "123456"
+    "name": "default_user"
+}
+
+### ==================== 管理接口（member 调用会 403） ====================
+
+# 用户列表（需要 user:list）
+GET {{baseUrl}}/list
+Authorization: Bearer {{token}}
+###
+
+# 用户分页（需要 user:list）
+GET {{baseUrl}}/page?page=1&pageSize=10&keyword=user1 HTTP/1.1
+Authorization: Bearer {{token}}
+###
+
+# 给用户分配角色，全量替换（需要 user:assign_role；roleIds 为角色 id 数组）
+PUT {{baseUrl}}/2/roles
+content-type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "roleIds": [2, 3]
 }
 
 ###
 
+# 删除用户（需要 user:delete）
 DELETE {{baseUrl}}/41
-content-type: application/json
+Authorization: Bearer {{token}}

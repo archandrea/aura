@@ -10,6 +10,7 @@ import noteEndpoints from './endpoints/note.js'
 import modelConfigEndpoints from './endpoints/model-config.js'
 import modelsEndpoints from './endpoints/models.js'
 import roleEndpoints from './endpoints/role.js'
+import menuEndpoints from './endpoints/menu.js'
 
 const app = express()
 const apiRouter = express.Router()
@@ -24,6 +25,7 @@ noteEndpoints(apiRouter)
 modelConfigEndpoints(apiRouter)
 modelsEndpoints(apiRouter)
 roleEndpoints(apiRouter)
+menuEndpoints(apiRouter)
 
 // Handle 404 - Catch all unmatched routes
 app.use((req, res, next) => {
@@ -39,14 +41,14 @@ app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.type === 'entity.parse.failed') {
     return res.status(400).json({
       code: 400,
-      message: 'invalid request body'
+      message: 'Invalid request body'
     })
   }
 
-  const statusCode = err.status || 500
+  const statusCode = err.statusCode || err.status || 500
   const message = err.message || 'internal server error'
 
-  res.status(200).json({
+  res.status(statusCode).json({
     code: statusCode,
     message: message,
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
