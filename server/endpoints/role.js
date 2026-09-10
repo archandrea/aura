@@ -3,7 +3,7 @@ import Role from '../models/role.js'
 import Rbac from '../models/rbac.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { authMiddleware } from '../middlewares/auth.js'
-import { loadAuthContext, requirePermission, isSuperAdmin } from '../middlewares/rbac.js'
+import { loadAuthContext, requirePermission, isSuperAdmin, invalidateAll } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound, Conflict, Forbidden } from '../utils/appError.js'
 
@@ -124,6 +124,7 @@ function roleEndpoints(apiRouter) {
     }
 
     await Role.update(id, { name, description })
+    await invalidateAll()
     const data = await Role.findById(id)
     res.status(200).json({
       data,
@@ -146,6 +147,7 @@ function roleEndpoints(apiRouter) {
 
     // delete 内部会清理 role_menu / user_role 关联
     const data = await Role.delete(id)
+    await invalidateAll()
     res.status(200).json({
       data,
       code: 200,
@@ -205,6 +207,7 @@ function roleEndpoints(apiRouter) {
     }
 
     await Rbac.assignMenusToRole(id, menuIds)
+    await invalidateAll()
     res.status(200).json({
       data: true,
       code: 200,

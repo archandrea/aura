@@ -1,6 +1,27 @@
 import db from '../sql/index.js'
 import Rbac from '../models/rbac.js'
+import { cacheGet, cacheSet, cacheDel, scanDel } from '../utils/redis.js'
+import { logger } from '../utils/logger.js'
 import { Unauthorized, Forbidden, NotFound } from '../utils/appError.js'
+
+const keyOf = (userId) => `rbac:user:${userId}`
+const TTL = 300
+
+async function getAuthContext(userId) {
+  const cached = await cacheGet(keyOf(userId))
+  if (cached) {
+    logger.info(`[rbac-cache] hit user:${userId}`)
+    return cached
+  }
+  const [roles, permissions] = await Promise.all([
+    Rbac.getUserRoles(userId),
+    Rbac.getUserPermissions(userId),
+  ])
+  const ctx = { roles, permissions }
+  await cacheSet(keyOf(userId), ctx, TTL)
+  logger.info(`[rbac-cache] miss user:${userId}`)
+  return ctx
+}
 
 /**
  * 加载当前用户的角色与权限上下文 → 挂载到 req.auth
@@ -11,10 +32,7 @@ export const loadAuthContext = async (req, res, next) => {
   if (!userId) {
     throw Unauthorized('no user session found')
   }
-
-  const roles = await Rbac.getUserRoles(userId)
-  const permissions = await Rbac.getUserPermissions(userId)
-  req.auth = { roles, permissions }
+  req.auth = await getAuthContext(userId)
   next()
 }
 
@@ -131,3 +149,12 @@ export const requireOwnership = ({ resource, idFrom = 'params.id' }) => {
     throw Forbidden('you do not own this resource')
   }
 }
+
+export async function invalidateUser(userId) {
+  await cacheDel(keyOf(userId))
+}
+
+export async function invalidateAll() {
+  await scanDel('rbac:user:*')
+}
+

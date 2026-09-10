@@ -9,7 +9,7 @@ import { AppError, BadRequest, NotFound, Conflict, Forbidden } from '../utils/ap
 import { comparePassword } from '../utils/bcrypt.js'
 import jwt from 'jsonwebtoken'
 import { authMiddleware } from '../middlewares/auth.js'
-import { loadAuthContext, requirePermission, requireSelfOrPermission, isSuperAdmin } from '../middlewares/rbac.js'
+import { loadAuthContext, requirePermission, requireSelfOrPermission, isSuperAdmin, invalidateUser } from '../middlewares/rbac.js'
 import { toTree } from '../../shared/utils/formatter.js'
 
 const router = express.Router()
@@ -214,6 +214,7 @@ function userEndpoints(apiRouter) {
       throw Forbidden('only super_admin can delete a super_admin user')
     }
     const data = await User.delete(id)
+    await invalidateUser(id)
     res.status(200).json({
       data,
       code: 200,
@@ -252,6 +253,7 @@ function userEndpoints(apiRouter) {
     }
 
     await Rbac.assignRolesToUser(id, roleIds)
+    await invalidateUser(id)
     res.status(200).json({
       data: true,
       code: 200,

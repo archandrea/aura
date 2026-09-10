@@ -38,6 +38,20 @@ try {
 
 // 必须在设置好环境变量且创建好数据库之后再导入 sql
 const { default: pool } = await import('../sql/index.js')
+// Redis 同理：测试期间连真实 Redis，但缓存必须在跑前/跑后清空，
+// 否则上一轮运行残留的 rbac 缓存会污染本轮测试（MySQL 清了而 Redis 没清，权限断言会撞上脏缓存）
+const { default: redis } = await import('../utils/redis.js')
+
+// 注意必须用 beforeEach 而不是 beforeAll：
+// 各测试文件的 beforeEach 会 TRUNCATE user 表重建数据，自增 ID 从 1 重新发号，
+// 不同测试的"同 ID 不同权限"用户会互相踩缓存，只有逐测试清空才能对齐
+beforeEach(async () => {
+  try {
+    if (redis) await redis.flushdb()
+  } catch (err) {
+    console.error('⚠️ Failed to flush redis before test:', err.message)
+  }
+})
 
 beforeAll(async () => {
   try {
@@ -89,6 +103,9 @@ afterAll(async () => {
       }
     }
     await pool.execute('SET FOREIGN_KEY_CHECKS = 1')
+
+    // 清空测试期间写入的 Redis 缓存，与上面的 TRUNCATE 对称
+    if (redis) await redis.flushdb()
 
     // 关闭连接池
     await pool.end()

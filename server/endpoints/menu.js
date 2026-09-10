@@ -4,7 +4,7 @@ import Rbac from '../models/rbac.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { toTree } from '../../shared/utils/formatter.js'
 import { authMiddleware } from '../middlewares/auth.js'
-import { loadAuthContext, requirePermission } from '../middlewares/rbac.js'
+import { loadAuthContext, requirePermission, invalidateAll } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound, Conflict } from '../utils/appError.js'
 
@@ -113,6 +113,7 @@ function menuEndpoints(apiRouter) {
     }
 
     await Menu.update(id, { parentId, name, code, permission, path, icon, sortOrder, type, visible, status })
+    await invalidateAll()
     const data = await Menu.findById(id)
     res.status(200).json({
       data,
@@ -140,6 +141,7 @@ function menuEndpoints(apiRouter) {
     const data = await Menu.delete(id)
     // 同步清理 role_menu 中的引用
     await Rbac.cleanMenuRelations(id)
+    await invalidateAll()
     res.status(200).json({
       data,
       code: 200,

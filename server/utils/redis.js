@@ -47,4 +47,17 @@ export async function cacheDel(...keys) {
   }
 }
 
+export async function scanDel(pattern) {
+  if (!redis) return
+  const prefix = redis.options?.keyPrefix || ''
+  let cursor = '0'
+  do {
+    const [next, keys] = await redis.scan(cursor, 'MATCH', prefix + pattern, 'COUNT', 100)
+    cursor = next
+    if (keys.length) {
+      await redis.del(...keys.map(k => (k.startsWith(prefix) ? k.slice(prefix.length) : k)))
+    }
+  } while (cursor !== '0')
+}
+
 export default redis
