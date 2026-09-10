@@ -9,6 +9,7 @@ import { AppError, BadRequest, NotFound, Conflict, Forbidden } from '../utils/ap
 import { comparePassword } from '../utils/bcrypt.js'
 import { randomUUID } from 'node:crypto'
 import jwt from 'jsonwebtoken'
+import rateLimit from '../middlewares/rate-limit.js'
 import { authMiddleware } from '../middlewares/auth.js'
 import { loadAuthContext, requirePermission, requireSelfOrPermission, isSuperAdmin, invalidateUser } from '../middlewares/rbac.js'
 import { cacheSet } from '../utils/redis.js'
@@ -131,7 +132,7 @@ function userEndpoints(apiRouter) {
     })
   }))
 
-  router.post('/login', asyncHandler(async (req, res) => {
+  router.post('/login', rateLimit({ prefix: 'login', windowSeconds: 60, max: 10 }), asyncHandler(async (req, res) => {
     const { email, password } = req.body
     if (!email || !password) {
       throw BadRequest('email and password are required')

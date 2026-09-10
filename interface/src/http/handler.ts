@@ -29,6 +29,9 @@ export const handleNetworkError = (errStatus: number) => {
       case 408:
         errMessage = '请求超时'
         break
+      case 429:
+        errMessage = '请求太频繁，请稍后再试'
+        break
       case 500:
         errMessage = '服务器端出错'
         break
