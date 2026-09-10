@@ -8,6 +8,13 @@ export const login = (payload: any) => {
   })
 }
 
+export const logout = (payload: any) => {
+  return request({
+    url: '/api/user/logout',
+    method: 'POST',
+  })
+}
+
 export const register = (payload: any) => {
   return request({
     url: '/api/user/register',

@@ -7,9 +7,11 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import Validator from '../../shared/utils/validator.js'
 import { AppError, BadRequest, NotFound, Conflict, Forbidden } from '../utils/appError.js'
 import { comparePassword } from '../utils/bcrypt.js'
+import { randomUUID } from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { authMiddleware } from '../middlewares/auth.js'
 import { loadAuthContext, requirePermission, requireSelfOrPermission, isSuperAdmin, invalidateUser } from '../middlewares/rbac.js'
+import { cacheSet } from '../utils/redis.js'
 import { toTree } from '../../shared/utils/formatter.js'
 
 const router = express.Router()
@@ -148,7 +150,8 @@ function userEndpoints(apiRouter) {
     const { id, name } = data
     const token = jwt.sign({ id, name, email }, process.env.JWT_SECRET, {
       algorithm: 'HS256',
-      expiresIn: '3 days'
+      expiresIn: '3 days',
+      jwtid: randomUUID(),
     })
 
     res.status(200).json({
@@ -161,6 +164,16 @@ function userEndpoints(apiRouter) {
       code: 200,
       message: 'success',
     })
+  }))
+
+  router.post('/logout', ...withAuthContext, asyncHandler(async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1]
+    const payload = jwt.decode(token)
+    const remaining = Math.ceil(payload.exp - Date.now() / 1000)
+    if (payload.jti && remaining > 0) {
+      await cacheSet(`jwt:blacklist:${payload.jti}`, 1, remaining)
+    }
+    res.status(200).json({ code: 200, message: 'success' })
   }))
 
   // 更新用户：本人可自助修改，修改他人需要 user:update 权限

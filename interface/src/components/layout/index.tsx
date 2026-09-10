@@ -1,17 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Navigate, Outlet, useNavigate, useLocation } from 'react-router'
 import { Flex, Layout, Menu, Avatar, Tooltip } from 'antd'
-import {
-  LogoutOutlined,
-  MenuUnfoldOutlined,
-  MenuFoldOutlined,
-  BookOutlined,
-  OpenAIFilled,
-  SettingFilled,
-  TeamOutlined,
-} from '@ant-design/icons'
+import { LogoutOutlined, MenuUnfoldOutlined, MenuFoldOutlined, BookOutlined, OpenAIFilled, SettingFilled, TeamOutlined } from '@ant-design/icons'
 import { useUserStore } from '@/store'
-import { profile } from '@/api/user'
+import { profile, logout } from '@/api/user'
 const { Header, Footer, Sider, Content } = Layout
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -84,6 +76,7 @@ export default function MyLayout() {
   }
 
   const handleLogout = () => {
+    await logout()
     clearUser()
     navigate('/login', { replace: true })
   }
@@ -118,12 +111,7 @@ export default function MyLayout() {
             <div
               className="brand group relative flex items-center h-16 border-b border-ashen/70 cursor-pointer select-none overflow-hidden px-5"
               onClick={() => setCollapsed(!collapsed)}>
-              <span
-                className={`flex-none w-7 h-7 ${
-                  collapsed
-                    ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
-                    : 'relative'
-                }`}>
+              <span className={`flex-none w-7 h-7 ${collapsed ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' : 'relative'}`}>
                 <span className="absolute inset-0 rounded-full bg-primary/30 blur-[6px] transition-opacity duration-300 group-hover:opacity-0" />
                 <span className="relative flex w-7 h-7 items-center justify-center rounded-full bg-gradient-to-br from-primary to-blue-400 text-white text-sm font-bold shadow-sm transition-opacity duration-200 group-hover:opacity-0">
                   A
@@ -153,12 +141,7 @@ export default function MyLayout() {
           {/* 用户区：头像 + 用户名 + 退出（悬浮用户栏时浮现退出按钮） */}
           <div className="absolute bottom-0 left-0 w-full border-t border-ashen/70 bg-white">
             <div className="user-bar group relative flex items-center h-16 overflow-hidden px-5">
-              <span
-                className={`flex-none w-7 h-7 ${
-                  collapsed
-                    ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
-                    : 'relative'
-                }`}>
+              <span className={`flex-none w-7 h-7 ${collapsed ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' : 'relative'}`}>
                 <Avatar
                   size={28}
                   className="bg-gradient-to-br from-primary to-blue-400"
@@ -175,9 +158,7 @@ export default function MyLayout() {
               <Tooltip title="退出登录">
                 <LogoutOutlined
                   className={`absolute right-4 text-base text-gray-400 transition-all duration-300 ease-out hover:!text-red-500 ${
-                    collapsed
-                      ? 'opacity-0'
-                      : 'opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0'
+                    collapsed ? 'opacity-0' : 'opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0'
                   }`}
                   onClick={handleLogout}
                 />

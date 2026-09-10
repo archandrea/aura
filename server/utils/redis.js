@@ -8,6 +8,7 @@ const redis = enabled
     host: process.env.REDIS_HOST || '127.0.0.1',
     port: Number(process.env.REDIS_PORT || 6379),
     // lazyConnect: true,
+    enableOfflineQueue: false,
     maxRetriesPerRequest: 1,
     retryStrategy: (times) => Math.min(times * 200, 2000), // 断线后自动重连，间隔递增，最长 2 秒
     keyPrefix: 'aura:',
