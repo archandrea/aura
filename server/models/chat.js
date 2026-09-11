@@ -37,12 +37,12 @@ export default class Chat {
     }
   }
 
-  static async create({ workspaceId, proposer, content } = {}) {
+  static async create({ workspaceId, proposer, content, modelId } = {}) {
     if (!workspaceId) {
       throw new Error('workspaceId is required')
     }
-    const baseSql = 'INSERT INTO chat (workspace_id, proposer, content) VALUES (?, ?, ?)'
-    const [result] = await db.query(baseSql, [workspaceId, proposer, content])
+    const baseSql = 'INSERT INTO chat (workspace_id, proposer, content, model_id) VALUES (?, ?, ?, ?)'
+    const [result] = await db.query(baseSql, [workspaceId, proposer, content, modelId ?? null])
     return result.insertId
   }
 

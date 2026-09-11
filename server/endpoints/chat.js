@@ -68,7 +68,7 @@ function chatEndpoints(apiRouter) {
 
       await Chat.create({
         workspaceId,
-        modelId: modelConfig.modelId,
+        modelId: modelConfig.id,
         content,
         proposer: 'user'
       })
