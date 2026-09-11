@@ -75,7 +75,7 @@ export default function MyLayout() {
     item?.props?.path && navigate(item.props.path)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
     await logout()
     clearUser()
     navigate('/login', { replace: true })

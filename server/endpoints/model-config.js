@@ -7,7 +7,8 @@ import { requireOwnership } from '../middlewares/rbac.js'
 import Validator from '../../shared/utils/validator.js'
 import { BadRequest, NotFound } from '../utils/appError.js'
 
-const VALID_PROVIDERS = ['openai', 'anthropic', 'google', 'openai-compatible']
+const NATIVE_PROVIDERS = ['openai', 'anthropic', 'google']
+const PROVIDER_RE = /^[a-z0-9][a-z0-9._-]*$/i
 
 const router = express.Router()
 
@@ -78,8 +79,11 @@ function modelConfigEndpoints(apiRouter) {
     if (!provider || !modelName) {
       throw BadRequest('provider and modelName are required')
     }
-    if (!Validator.isOneOf(provider, VALID_PROVIDERS)) {
-      throw BadRequest(`provider must be one of: ${VALID_PROVIDERS.join(', ')}`)
+    if (!PROVIDER_RE.test(provider)) {
+      throw BadRequest('provider must be a valid identifier (letters, digits, ".", "_", "-")')
+    }
+    if (!NATIVE_PROVIDERS.includes(provider) && !Validator.isUrl(baseUrl)) {
+      throw BadRequest(`baseUrl is required for provider "${provider}"`)
     }
     if (!Validator.isNonEmptyString(modelName)) {
       throw BadRequest('modelName must be a non-empty string')
@@ -109,8 +113,8 @@ function modelConfigEndpoints(apiRouter) {
     if (!provider && !baseUrl && apiKey === undefined && !modelName && temperature === undefined && maxTokens === undefined && isActive === undefined) {
       throw BadRequest('at least one field is required')
     }
-    if (provider && !Validator.isOneOf(provider, VALID_PROVIDERS)) {
-      throw BadRequest(`provider must be one of: ${VALID_PROVIDERS.join(', ')}`)
+    if (provider !== undefined && !PROVIDER_RE.test(provider)) {
+      throw BadRequest('provider must be a valid identifier (letters, digits, ".", "_", "-")')
     }
     if (modelName !== undefined && !Validator.isNonEmptyString(modelName)) {
       throw BadRequest('modelName must be a non-empty string')
@@ -128,6 +132,12 @@ function modelConfigEndpoints(apiRouter) {
     const existing = await ModelConfig.findById(id)
     if (!existing) {
       throw NotFound('model config not found')
+    }
+
+    const nextProvider = provider !== undefined ? provider : existing.provider
+    const nextBaseUrl = baseUrl !== undefined ? baseUrl : existing.baseUrl
+    if (!NATIVE_PROVIDERS.includes(nextProvider) && !Validator.isUrl(nextBaseUrl)) {
+      throw BadRequest(`baseUrl is required for provider "${nextProvider}"`)
     }
 
     const data = await ModelConfig.update(id, { provider, baseUrl, apiKey, modelName, temperature, maxTokens, isActive })

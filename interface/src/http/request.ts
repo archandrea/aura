@@ -29,7 +29,12 @@ service.interceptors.response.use(response => {
 }, error => {
   // console.log('response-interceptors-error', error)
   const errStatus = error.status ?? error.response?.status
-  handleNetworkError(errStatus)
+  const errMsg = error.response?.data.message
+  if (errMsg) {
+    handleErrMsg(errMsg)
+  } else {
+    handleNetworkError(errStatus)
+  }
   if (errStatus === 401) {
     window.location.href = '/login'
   }

@@ -3,6 +3,8 @@ import { App, Space, Card, Switch, Drawer, Form, Input, InputNumber, Button, Pop
 import { SettingOutlined, DeleteOutlined } from '@ant-design/icons'
 import { getProviderList, getModelList, getModelConfigGroup, createModelConfig, updateModelConfig, deleteModelConfig } from '@/api/setting'
 
+const NATIVE_PROVIDERS = ['openai', 'anthropic', 'google']
+
 export function ModelConfigPanel({ data = null, open, setOpen, refresh }) {
   const [form] = Form.useForm()
   const { message } = App.useApp()
@@ -97,7 +99,7 @@ export function ModelConfigPanel({ data = null, open, setOpen, refresh }) {
             <Select
               onChange={handleProviderChange}
               showSearch
-              options={providerList.map((item) => {
+              options={[...new Set([...providerList, 'openai-compatible'])].map((item) => {
                 return { value: item, label: item }
               })}
             />
@@ -107,7 +109,7 @@ export function ModelConfigPanel({ data = null, open, setOpen, refresh }) {
           label="模型名称"
           name="modelName"
           rules={[{ required: true, message: '请选择' }]}>
-          {custom ? (
+          {custom || modelList.length === 0 ? (
             <Input />
           ) : (
             <Select
@@ -120,7 +122,19 @@ export function ModelConfigPanel({ data = null, open, setOpen, refresh }) {
         </Form.Item>
         <Form.Item
           label="Base URL"
-          name="baseUrl">
+          name="baseUrl"
+          dependencies={['provider']}
+          rules={[
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                const provider = getFieldValue('provider')
+                if (provider && !NATIVE_PROVIDERS.includes(provider) && !value) {
+                  return Promise.reject(new Error('该 Provider 需要填写 Base URL'))
+                }
+                return Promise.resolve()
+              },
+            }),
+          ]}>
           <Input />
         </Form.Item>
         <Form.Item

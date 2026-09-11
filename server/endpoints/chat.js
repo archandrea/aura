@@ -68,7 +68,7 @@ function chatEndpoints(apiRouter) {
 
       await Chat.create({
         workspaceId,
-        modelId,
+        modelId: modelConfig.modelId,
         content,
         proposer: 'user'
       })
@@ -84,7 +84,7 @@ function chatEndpoints(apiRouter) {
           },
           sort: {
             orderBy: 'created_at',
-            orderDir: 'asc'
+            orderDir: 'desc'
           }
         })
 
